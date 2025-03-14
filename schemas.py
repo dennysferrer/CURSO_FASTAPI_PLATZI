@@ -1,6 +1,6 @@
 from pydantic import BaseModel, field_validator, ValidationInfo
 
-class UserBaseModel(BaseModel):
+class UserRequestModel(BaseModel):
     username: str
     password: str
 
@@ -9,5 +9,10 @@ class UserBaseModel(BaseModel):
         if len(username)<3 or len(username)>50:
             raise ValueError('la longitud del username debe ser mayor a 3 y menor de 50 caracteres')
         return username
+
+class userResponseModel(BaseModel):
+    id: int
+    username: str
+
 
 
