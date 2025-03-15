@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from database import database as connection
 from database import User, Movie, UserReview
-from schemas import UserRequestModel, userResponseModel
+from schemas import UserRequestModel, userResponseModel, ReviewRequestModel, ReviewResponseModel
+from typing import List
 
 
 app = FastAPI(
@@ -20,7 +21,6 @@ async def start_up():
     connection.create_tables([User, Movie, UserReview])
 
 
-
 @app.on_event('shutdown')
 async def shut_down():
     print('Cerrando app...')
@@ -32,6 +32,12 @@ async def shut_down():
 @app.get('/')
 async def root():
     return {'message': 'Hello World'}
+
+
+@app.get('/reviews', response_model=List[ReviewResponseModel])
+async def get_reviews():
+    return UserReview.select()
+
 
 
 @app.post('/user', response_model=userResponseModel)
@@ -46,7 +52,27 @@ async def create_user(user: UserRequestModel):
         password=hash_password
     )
 
-    return userResponseModel(
+    user = userResponseModel(
         id=user.id,
         username=user.username
     )
+    return user
+
+
+@app.post('/reviews', response_model=ReviewRequestModel)
+async def create_review(user_review: ReviewRequestModel):
+
+    if User.select().where(User.id == user_review.user).firts() is None:
+        return HTTPException(status_code=404, detail='El usuario no existe')
+
+    if Movie.select().where(Movie.id == user_review.movie).firts() is None:
+        return HTTPException(status_code=404, detail='La película no existe')
+
+    user_review = UserReview.create(
+        user_id=user_review.user,
+        movie_id=user_review.movie,
+        review=user_review.review,
+        score=user_review.score
+    )
+
+    return user_review
